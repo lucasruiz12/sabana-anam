@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { toast, ToastContainer } from 'react-toastify';
 import clients from '../../constants/clients';
+import connections from '../../connections';
 import 'react-toastify/dist/ReactToastify.css';
 import './style.css';
 
@@ -8,23 +9,43 @@ const Home = () => {
     const [inputValue, setInputValue] = useState('');
 
     const [dataToSearch, setDataToSearch] = useState({
-        client_name: "",
+        site: "",
         interval: 1,
     });
 
     const [filteredClients, setFilteredClients] = useState([]);
 
-    useEffect(() => {
-        if (inputValue === "") {
-            setFilteredClients([]);
-        } else {
-            setFilteredClients(
-                clients.filter(client =>
-                    client.name.toLowerCase().includes(inputValue.toLowerCase()) && client.name !== dataToSearch.client_name
-                )
-            );
-        };
-    }, [inputValue, dataToSearch.client_name]);
+    const generateCSV = (data) => {
+        const BOM = '\uFEFF';
+        const headers = Object.keys(data[0]);
+        const rows = data.map(row =>
+            headers.map(header =>
+                `"${(row[header] || "").toString().replace(/"/g, '""')}"`
+            ).join(',').trim()
+        );
+        const csvContent = [headers.join(','), ...rows].join('\n');
+
+        return BOM + csvContent;
+    };
+
+
+    const downloadCSV = (csvContent, filename) => {
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+
+        console.log(filename)
+
+        // const filename = 'data.csv'
+
+        link.setAttribute('href', url);
+        link.setAttribute('download', filename);
+        link.style.visibility = 'hidden';
+
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
 
     const handleInputChange = (event) => {
         const { value } = event.target;
@@ -40,36 +61,138 @@ const Home = () => {
     };
 
     const handleDownloadClick = () => {
-        console.log(dataToSearch);
-        toast.info("Descarga en curso, por favor espere...", {
-            position: "top-center",
-            autoClose: 3000,
-            hideProgressBar: true,
-        });
 
-        setTimeout(() => {
-            setInputValue("");
-            setDataToSearch({ client_name: "", interval: 1 });
-            setFilteredClients([]);
+        const { site, interval } = dataToSearch;
 
-            toast.success("¡Descarga completada!", {
+        const now = new Date();
+        const date = now.toISOString();
+
+        // let date = "2024-11-29T23:57:31.000Z";
+
+        const daily = interval === 1;
+        const weekly = interval === 2;
+
+        const clientName = "Covivi";
+
+        const newData = {
+            date,
+            daily,
+            weekly,
+            clientName,
+            site,
+        };
+
+        let newFileName = `SABANA_${daily ? "DAILY" : "WEEKLY"}-${date}_${clientName}`;
+
+        if (site !== "") {
+            newFileName += site.split("-")[0].trim() + ".csv";
+        };
+
+        newFileName += ".csv";
+
+        connections.genTokenZoho().then(response => {
+            toast.info("Descarga en curso, por favor espere...", {
                 position: "top-center",
                 autoClose: 2000,
                 hideProgressBar: true,
             });
-        }, 3000);
+            if (response.data.success) {
+                const tokenZoho = response.data.data.auth_token;
+                connections.exportTickets(tokenZoho, newData).then(resp => {
+                    if (resp.data.success) {
+                        const { data } = resp.data;
+
+                        const arrayToCSV = generateCSV(data);
+
+                        downloadCSV(arrayToCSV, newFileName);
+
+                        setTimeout(() => {
+                            setInputValue("");
+                            setDataToSearch({ site: "", interval: 1 });
+                            setFilteredClients([]);
+
+                            toast.success("¡Descarga completada!", {
+                                position: "top-center",
+                                autoClose: 2000,
+                                hideProgressBar: true,
+                            });
+                        }, 1000);
+                    };
+                })
+                    .catch(err => {
+                        setTimeout(() => {
+                            setInputValue("");
+                            setDataToSearch({ site: "", interval: 1 });
+                            setFilteredClients([]);
+
+                            if (err.status === 404) {
+                                toast.warning("No hay datos disponibles", {
+                                    position: "top-center",
+                                    autoClose: 2000,
+                                    hideProgressBar: true,
+                                });
+                            } else {
+                                toast.error("¡Error! Reintente o comuníquese con soporte", {
+                                    position: "top-center",
+                                    autoClose: 2000,
+                                    hideProgressBar: true,
+                                });
+                            }
+                        }, 1000);
+                        console.error(err)
+                    });
+            } else {
+                setTimeout(() => {
+                    setInputValue("");
+                    setDataToSearch({ site: "", interval: 1 });
+                    setFilteredClients([]);
+
+                    toast.warning("¡Error! Comuníquese con soporte", {
+                        position: "top-center",
+                        autoClose: 2000,
+                        hideProgressBar: true,
+                    });
+                }, 1000);
+            }
+        })
+            .catch(err => {
+                setTimeout(() => {
+                    setInputValue("");
+                    setDataToSearch({ site: "", interval: 1 });
+                    setFilteredClients([]);
+
+                    toast.warning("¡Error! Comuníquese con soporte", {
+                        position: "top-center",
+                        autoClose: 2000,
+                        hideProgressBar: true,
+                    });
+                }, 3000);
+                console.error(err)
+            });
     };
 
-    const handleClientSelect = (clientName) => {
+    const handleClientSelect = (site) => {
         setDataToSearch((prevData) => ({
             ...prevData,
-            client_name: clientName,
+            site,
         }));
-        setInputValue(clientName);
+        setInputValue(site);
         setFilteredClients([]);
     };
 
-    const isButtonDisabled = inputValue !== dataToSearch.client_name;
+    const isButtonDisabled = inputValue !== dataToSearch.site;
+
+    useEffect(() => {
+        if (inputValue === "") {
+            setFilteredClients([]);
+        } else {
+            setFilteredClients(
+                clients.filter(client =>
+                    client.name.toLowerCase().includes(inputValue.toLowerCase()) && client.name !== dataToSearch.site
+                )
+            );
+        };
+    }, [inputValue, dataToSearch.site]);
 
     return (
         <div className="full-container">
@@ -78,15 +201,15 @@ const Home = () => {
                 <form className="form-search">
                     <h2 className="mb-4">Sábana de Tickets</h2>
                     <div className="mb-3">
-                        <label htmlFor="client_name" className="form-label">Nombre de Usuario</label>
+                        <label htmlFor="site" className="form-label">Nombre de sitio</label>
                         <input
                             type="text"
                             className="form-control"
-                            id="client_name"
-                            name="client_name"
+                            id="site"
+                            name="site"
                             value={inputValue}
                             onChange={handleInputChange}
-                            placeholder="Buscar Cliente..."
+                            placeholder="Buscar por sitio..."
                         />
                         {filteredClients.length > 0 && (
                             <ul className="list-group mt-2 clients-filter">

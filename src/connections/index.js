@@ -9,8 +9,8 @@ export default {
 
         return axios.create({
             headers: {
-                'access_key': ACCESS_KEY_ZOHO,
-                'access_secret': ACCESS_SECRET_ZOHO,
+                // 'access_key': ACCESS_KEY_ZOHO,
+                // 'access_secret': ACCESS_SECRET_ZOHO,
             },
         }).post(`${apiUrl}/gentoken`, data);
     },
@@ -19,10 +19,10 @@ export default {
         return axios.create({
             headers: {
                 'Authorization': tokenZoho,
-                'access_key': ACCESS_KEY_ZOHO,
-                'access_secret': ACCESS_SECRET_ZOHO,
+                // 'access_key': ACCESS_KEY_ZOHO,
+                // 'access_secret': ACCESS_SECRET_ZOHO,
             },
-        }).get(`${apiUrl}/export/tickets`, data);
+        }).post(`${apiUrl}/export/filterTickets`, data);
     },
 };
 
