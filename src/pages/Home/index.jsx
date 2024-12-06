@@ -81,7 +81,7 @@ const Home = () => {
         let newFileName = `SABANA_${daily ? "DAILY" : "WEEKLY"}-${date}_${clientName}`;
 
         if (site !== "") {
-            newFileName += site.split("-")[0].trim() + ".csv";
+            newFileName += site.split("-")[0].trim();
         };
 
         newFileName += ".csv";
