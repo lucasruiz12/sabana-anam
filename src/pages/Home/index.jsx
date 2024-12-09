@@ -176,11 +176,23 @@ const Home = () => {
         setFilteredClients([]);
     };
 
+    const handleInputFocus = () => {
+        if(inputValue === ""){
+            setFilteredClients(clients);
+        };
+    };
+
+    const handleInputBlur = () => {
+        if(inputValue === ""){
+            setFilteredClients([]);
+        };
+    };
+
     const isButtonDisabled = inputValue !== dataToSearch.site;
 
     useEffect(() => {
         if (inputValue === "") {
-            setFilteredClients([]);
+            setFilteredClients(clients);
         } else {
             setFilteredClients(
                 clients.filter(client =>
@@ -205,6 +217,8 @@ const Home = () => {
                             name="site"
                             value={inputValue}
                             onChange={handleInputChange}
+                            onFocus={handleInputFocus}
+                            onBlur={handleInputBlur}
                             placeholder="Buscar por sitio..."
                         />
                         {filteredClients.length > 0 && (
