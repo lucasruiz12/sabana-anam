@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { toast, ToastContainer } from 'react-toastify';
 import clients from '../../constants/clients';
 import connections from '../../connections';
+import DatePicker from 'react-datepicker';
+import "react-datepicker/dist/react-datepicker.css";
 import 'react-toastify/dist/ReactToastify.css';
 import './style.css';
 
@@ -14,6 +16,7 @@ const Home = () => {
     });
 
     const [filteredClients, setFilteredClients] = useState([]);
+    const [dateToFilter, setDateToFilter] = useState("");
 
     const generateCSV = (data) => {
         const BOM = '\uFEFF';
@@ -50,6 +53,9 @@ const Home = () => {
 
     const handleRadioChange = (event) => {
         const { value } = event.target;
+        if(value !== 3){
+            setDateToFilter("");
+        };
         setDataToSearch((prevData) => ({
             ...prevData,
             interval: parseInt(value),
@@ -60,13 +66,17 @@ const Home = () => {
 
         const { site, interval } = dataToSearch;
 
-        const now = new Date();
-        const date = now.toISOString();
+        let now = new Date();
 
-        // let date = "2024-11-29T23:57:31.000Z";
+        if (dateToFilter) {
+            now = new Date(dateToFilter);
+        };
+
+        const date = now.toISOString();
 
         const daily = interval === 1;
         const weekly = interval === 2;
+        const specifies = interval === 3;
 
         const clientName = "Covivi";
 
@@ -74,11 +84,12 @@ const Home = () => {
             date,
             daily,
             weekly,
+            specifies,
             clientName,
             site,
         };
 
-        let newFileName = `SABANA_${daily ? "DAILY" : "WEEKLY"}-${date}_${clientName}`;
+        let newFileName = `SABANA_${daily ? "DAILY" : weekly ? "WEEKLY" : "FILTER_BY_DAY"}-${date}_${clientName}`;
 
         if (site !== "") {
             newFileName += site.split("-")[0].trim();
@@ -119,6 +130,7 @@ const Home = () => {
                         setTimeout(() => {
                             setInputValue("");
                             setDataToSearch({ site: "", interval: 1 });
+                            setDateToFilter("");
                             setFilteredClients([]);
 
                             if (err.status === 404) {
@@ -177,18 +189,27 @@ const Home = () => {
     };
 
     const handleInputFocus = () => {
-        if(inputValue === ""){
+        if (inputValue === "") {
             setFilteredClients(clients);
         };
     };
 
     const handleInputBlur = () => {
-        if(inputValue === ""){
+        if (inputValue === "") {
             setFilteredClients([]);
+            setInputValue("");
+            setDataToSearch((prevData) => ({
+                ...prevData,
+                site: "",
+            }));
         };
     };
 
-    const isButtonDisabled = inputValue !== dataToSearch.site;
+    const handleDateChange = (date) => {
+        setDateToFilter(date);
+    };
+
+    // const isButtonDisabled = 
 
     useEffect(() => {
         if (inputValue === "") {
@@ -262,13 +283,36 @@ const Home = () => {
                             />
                             <label className="form-check-label" htmlFor="weekly">Semanal</label>
                         </div>
+                        <div className="form-check">
+                            <input
+                                type="radio"
+                                className="form-check-input"
+                                id="specificDay"
+                                name="interval"
+                                value="3"
+                                checked={dataToSearch.interval === 3}
+                                onChange={handleRadioChange}
+                            />
+                            <label className="form-check-label" htmlFor="specificDay">Día específico</label>
+                            {dataToSearch.interval === 3 && (
+                                <DatePicker
+                                    selected={dateToFilter}
+                                    onChange={handleDateChange}
+                                    dateFormat="yyyy-MM-dd"
+                                    className="form-date-control"
+                                    placeholderText="Seleccione una fecha"
+                                    disabledKeyboardNavigation
+                                />
+                            )}
+                        </div>
                     </div>
 
                     <button
                         type="button"
                         className="btn btn-primary"
                         onClick={handleDownloadClick}
-                        disabled={isButtonDisabled}
+                        // disabled={inputValue !== dataToSearch.site}
+                        disabled={(dataToSearch.interval === 3 && dateToFilter === "") || inputValue !== dataToSearch.site}
                     >
                         DESCARGAR CSV
                     </button>

@@ -25,6 +25,13 @@
     border-radius: 1rem;
 }
 
+.form-date-control{
+    margin-left: 2vw;
+    border: solid 1px gray;
+    border-radius: 0.5rem;
+    padding: 0.1rem 0.5rem;
+}
+
 .list-group-item {
     cursor: pointer;
 }
