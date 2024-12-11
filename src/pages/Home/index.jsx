@@ -166,7 +166,7 @@ const Home = () => {
                 <form className="form-search">
                     <h2 className="mb-4">Sábana de Tickets</h2>
                     <div className="mb-3">
-                        <label htmlFor="site" className="form-label">Nombre de sitio</label>
+                        <label htmlFor="site" className="form-label">Puntos tácticos</label>
                         <select
                             className="form-select"
                             id="site"
@@ -174,7 +174,7 @@ const Home = () => {
                             value={dataToSearch.site}
                             onChange={handleSelectChange}
                         >
-                            <option value="">Seleccione sitio</option>
+                            <option value="">Todos los puntos tácticos</option>
                             {clients.map(client => (
                                 <option key={client.id} value={client.name}>
                                     {client.name}
