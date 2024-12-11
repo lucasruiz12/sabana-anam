@@ -9,14 +9,13 @@ import './style.css';
 
 const Home = () => {
     const [inputValue, setInputValue] = useState('');
-
     const [dataToSearch, setDataToSearch] = useState({
         site: "",
         interval: 1,
     });
-
     const [filteredClients, setFilteredClients] = useState([]);
     const [dateToFilter, setDateToFilter] = useState("");
+    const [isClientSelected, setIsClientSelected] = useState(false); // Estado para manejar si un cliente fue seleccionado
 
     const generateCSV = (data) => {
         const BOM = '\uFEFF';
@@ -27,20 +26,16 @@ const Home = () => {
             ).join(',').trim()
         );
         const csvContent = [headers.join(','), ...rows].join('\n');
-
         return BOM + csvContent;
     };
-
 
     const downloadCSV = (csvContent, filename) => {
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement('a');
         const url = URL.createObjectURL(blob);
-
         link.setAttribute('href', url);
         link.setAttribute('download', filename);
         link.style.visibility = 'hidden';
-
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -49,11 +44,17 @@ const Home = () => {
     const handleInputChange = (event) => {
         const { value } = event.target;
         setInputValue(value);
+        if (value === "") {
+            setDataToSearch((prevData) => ({
+                ...prevData,
+                site: value,
+            }));
+        };
     };
 
     const handleRadioChange = (event) => {
         const { value } = event.target;
-        if(value !== 3){
+        if (value !== 3) {
             setDateToFilter("");
         };
         setDataToSearch((prevData) => ({
@@ -63,9 +64,7 @@ const Home = () => {
     };
 
     const handleDownloadClick = () => {
-
         const { site, interval } = dataToSearch;
-
         let now = new Date();
 
         if (dateToFilter) {
@@ -73,13 +72,10 @@ const Home = () => {
         };
 
         const date = now.toISOString();
-
         const daily = interval === 1;
         const weekly = interval === 2;
         const specifies = interval === 3;
-
         const clientName = "Covivi";
-
         const newData = {
             date,
             daily,
@@ -108,16 +104,13 @@ const Home = () => {
                 connections.exportTickets(tokenZoho, newData).then(resp => {
                     if (resp.data.success) {
                         const { data } = resp.data;
-
                         const arrayToCSV = generateCSV(data);
-
                         downloadCSV(arrayToCSV, newFileName);
-
                         setTimeout(() => {
                             setInputValue("");
                             setDataToSearch({ site: "", interval: 1 });
                             setFilteredClients([]);
-
+                            setIsClientSelected(false); // Resetear el estado de selección del cliente
                             toast.success("¡Descarga completada!", {
                                 position: "top-center",
                                 autoClose: 2000,
@@ -132,6 +125,7 @@ const Home = () => {
                             setDataToSearch({ site: "", interval: 1 });
                             setDateToFilter("");
                             setFilteredClients([]);
+                            setIsClientSelected(false); // Resetear el estado de selección del cliente
 
                             if (err.status === 404) {
                                 toast.warning("No hay datos disponibles", {
@@ -147,14 +141,14 @@ const Home = () => {
                                 });
                             }
                         }, 1000);
-                        console.error(err)
+                        console.error(err);
                     });
             } else {
                 setTimeout(() => {
                     setInputValue("");
                     setDataToSearch({ site: "", interval: 1 });
                     setFilteredClients([]);
-
+                    setIsClientSelected(false); // Resetear el estado de selección del cliente
                     toast.warning("¡Error! Comuníquese con soporte", {
                         position: "top-center",
                         autoClose: 2000,
@@ -168,14 +162,14 @@ const Home = () => {
                     setInputValue("");
                     setDataToSearch({ site: "", interval: 1 });
                     setFilteredClients([]);
-
+                    setIsClientSelected(false); // Resetear el estado de selección del cliente
                     toast.warning("¡Error! Comuníquese con soporte", {
                         position: "top-center",
                         autoClose: 2000,
                         hideProgressBar: true,
                     });
                 }, 3000);
-                console.error(err)
+                console.error(err);
             });
     };
 
@@ -184,12 +178,13 @@ const Home = () => {
             ...prevData,
             site,
         }));
-        setInputValue(site);
+        setInputValue("");
         setFilteredClients([]);
+        setIsClientSelected(true); // Marcar que un cliente fue seleccionado
     };
 
     const handleInputFocus = () => {
-        if (inputValue === "") {
+        if (!isClientSelected && inputValue === "") {
             setFilteredClients(clients);
         };
     };
@@ -209,8 +204,6 @@ const Home = () => {
         setDateToFilter(date);
     };
 
-    // const isButtonDisabled = 
-
     useEffect(() => {
         if (inputValue === "") {
             setFilteredClients(clients);
@@ -221,7 +214,7 @@ const Home = () => {
                 )
             );
         };
-    }, [inputValue, dataToSearch.site]);
+    }, [dataToSearch.site]);
 
     return (
         <div className="full-container">
@@ -231,91 +224,120 @@ const Home = () => {
                     <h2 className="mb-4">Sábana de Tickets</h2>
                     <div className="mb-3">
                         <label htmlFor="site" className="form-label">Nombre de sitio</label>
-                        <input
-                            type="text"
-                            className="form-control"
-                            id="site"
-                            name="site"
-                            value={inputValue}
-                            onChange={handleInputChange}
-                            onFocus={handleInputFocus}
-                            onBlur={handleInputBlur}
-                            placeholder="Buscar por sitio..."
-                        />
-                        {filteredClients.length > 0 && (
-                            <ul className="list-group mt-2 clients-filter">
-                                {filteredClients.map((client) => (
-                                    <li
-                                        key={client.id}
-                                        className="list-group-item"
-                                        onClick={() => handleClientSelect(client.name)}
+                        <div style={{ display: "flex", justifyContent: "space-between" }}>
+                            <input
+                                type="text"
+                                className="form-control"
+                                style={{
+                                    width: "40%"
+                                }}
+                                id="site"
+                                name="site"
+                                disabled={isClientSelected} // Deshabilitar el input cuando un cliente es seleccionado
+                                value={inputValue}
+                                onChange={handleInputChange}
+                                onFocus={handleInputFocus}
+                                onBlur={handleInputBlur}
+                                placeholder="Buscar por sitio..."
+                            />
+                            {
+                                dataToSearch.site &&
+                                <div style={{ display: "flex", justifyContent: "flex-start", alignItems: "center", width: "40%" }}>
+                                    <button
+                                        type="button"
+                                        className="btn btn-primary"
+                                        onClick={() => {
+                                            setDataToSearch((prevData) => ({
+                                                ...prevData,
+                                                site: "",
+                                            }));
+                                            setIsClientSelected(false); // Resetear el estado de selección de cliente
+                                        }}
                                     >
-                                        {client.name}
-                                    </li>
-                                ))}
-                            </ul>
-                        )}
+                                        {dataToSearch.site} X
+                                    </button>
+                                </div>
+                            }
+                        </div>
                     </div>
-
+                    {filteredClients.length > 0 && !isClientSelected && (
+                        <ul className="list-group mt-2 clients-filter">
+                            {filteredClients.map((client, index) => (
+                                <li
+                                    key={index}
+                                    onClick={() => handleClientSelect(client.name)}
+                                    className="list-group-item"
+                                >
+                                    {client.name}
+                                </li>
+                            ))}
+                        </ul>
+                    )}
                     <div className="mb-3">
                         <label className="form-label">Intervalo</label>
-                        <div className="form-check">
-                            <input
-                                type="radio"
-                                className="form-check-input"
-                                id="daily"
-                                name="interval"
-                                value="1"
-                                checked={dataToSearch.interval === 1}
-                                onChange={handleRadioChange}
-                            />
-                            <label className="form-check-label" htmlFor="daily">Diario</label>
-                        </div>
-                        <div className="form-check">
-                            <input
-                                type="radio"
-                                className="form-check-input"
-                                id="weekly"
-                                name="interval"
-                                value="2"
-                                checked={dataToSearch.interval === 2}
-                                onChange={handleRadioChange}
-                            />
-                            <label className="form-check-label" htmlFor="weekly">Semanal</label>
-                        </div>
-                        <div className="form-check">
-                            <input
-                                type="radio"
-                                className="form-check-input"
-                                id="specificDay"
-                                name="interval"
-                                value="3"
-                                checked={dataToSearch.interval === 3}
-                                onChange={handleRadioChange}
-                            />
-                            <label className="form-check-label" htmlFor="specificDay">Día específico</label>
-                            {dataToSearch.interval === 3 && (
-                                <DatePicker
-                                    selected={dateToFilter}
-                                    onChange={handleDateChange}
-                                    dateFormat="yyyy-MM-dd"
-                                    className="form-date-control"
-                                    placeholderText="Seleccione una fecha"
-                                    disabledKeyboardNavigation
+                        <div>
+                            <div className="form-check">
+                                <input
+                                    className="form-check-input"
+                                    type="radio"
+                                    name="interval"
+                                    id="daily"
+                                    value={1}
+                                    checked={dataToSearch.interval === 1}
+                                    onChange={handleRadioChange}
                                 />
-                            )}
+                                <label className="form-check-label" htmlFor="daily">Diario</label>
+                            </div>
+                            <div className="form-check">
+                                <input
+                                    className="form-check-input"
+                                    type="radio"
+                                    name="interval"
+                                    id="weekly"
+                                    value={2}
+                                    checked={dataToSearch.interval === 2}
+                                    onChange={handleRadioChange}
+                                />
+                                <label className="form-check-label" htmlFor="weekly">Semanal</label>
+                            </div>
+                            <div className="form-check">
+                                <input
+                                    className="form-check-input"
+                                    type="radio"
+                                    name="interval"
+                                    id="specify"
+                                    value={3}
+                                    checked={dataToSearch.interval === 3}
+                                    onChange={handleRadioChange}
+                                />
+                                <label className="form-check-label" htmlFor="specify">Especificar</label>
+                                {
+                                    dataToSearch.interval === 3 &&
+                                    <DatePicker
+                                        id="date-picker"
+                                        selected={dateToFilter}
+                                        onChange={handleDateChange}
+                                        dateFormat="yyyy-MM-dd"
+                                        disabled={dataToSearch.interval !== 3}
+                                        className="form-date-control"
+                                        placeholderText="Seleccione una fecha"
+                                        disabledKeyboardNavigation
+                                    />
+                                }
+                            </div>
                         </div>
                     </div>
-
-                    <button
-                        type="button"
-                        className="btn btn-primary"
-                        onClick={handleDownloadClick}
-                        // disabled={inputValue !== dataToSearch.site}
-                        disabled={(dataToSearch.interval === 3 && dateToFilter === "") || inputValue !== dataToSearch.site}
-                    >
-                        DESCARGAR CSV
-                    </button>
+                    <div className="mb-3">
+                        <button
+                            type="button"
+                            className="btn btn-primary"
+                            onClick={handleDownloadClick}
+                            // disabled={inputValue !== dataToSearch.site}
+                            disabled={(dataToSearch.interval === 3 && dateToFilter === "")}
+                        >
+                            DESCARGAR CSV
+                        </button>
+                    </div>
                 </form>
                 <ToastContainer />
             </div>

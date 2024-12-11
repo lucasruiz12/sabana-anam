@@ -17,9 +17,12 @@
 }
 
 .form-search{
-    min-height: 40vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 50vh;
     max-height: 60vh;
-    width: 40vw;
+    width: 50vw;
     padding: 2rem;
     background-color: white;
     border-radius: 1rem;
@@ -34,6 +37,7 @@
 
 .list-group-item {
     cursor: pointer;
+    pointer-events: auto;
 }
 .list-group-item:hover {
     background-color: #b6b6b6 ;
