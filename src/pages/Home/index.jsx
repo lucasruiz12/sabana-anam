@@ -8,14 +8,11 @@ import 'react-toastify/dist/ReactToastify.css';
 import './style.css';
 
 const Home = () => {
-    const [inputValue, setInputValue] = useState('');
-
     const [dataToSearch, setDataToSearch] = useState({
         site: "",
         interval: 1,
     });
 
-    const [filteredClients, setFilteredClients] = useState([]);
     const [dateToFilter, setDateToFilter] = useState("");
 
     const generateCSV = (data) => {
@@ -31,7 +28,6 @@ const Home = () => {
         return BOM + csvContent;
     };
 
-
     const downloadCSV = (csvContent, filename) => {
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement('a');
@@ -46,22 +42,19 @@ const Home = () => {
         document.body.removeChild(link);
     };
 
-    const handleInputChange = (event) => {
+    const handleSelectChange = (event) => {
         const { value } = event.target;
-        setInputValue(value);
-        if (value === "") {
-            setDataToSearch((prevData) => ({
-                ...prevData,
-                site: value,
-            }));
-        };
+        setDataToSearch((prevData) => ({
+            ...prevData,
+            site: value,
+        }));
     };
 
     const handleRadioChange = (event) => {
         const { value } = event.target;
-        if(value !== 3){
+        if (value !== "3") {
             setDateToFilter("");
-        };
+        }
         setDataToSearch((prevData) => ({
             ...prevData,
             interval: parseInt(value),
@@ -69,14 +62,13 @@ const Home = () => {
     };
 
     const handleDownloadClick = () => {
-
         const { site, interval } = dataToSearch;
 
         let now = new Date();
 
         if (dateToFilter) {
             now = new Date(dateToFilter);
-        };
+        }
 
         const date = now.toISOString();
 
@@ -99,7 +91,7 @@ const Home = () => {
 
         if (site !== "") {
             newFileName += site.split("-")[0].trim();
-        };
+        }
 
         newFileName += ".csv";
 
@@ -120,114 +112,52 @@ const Home = () => {
                         downloadCSV(arrayToCSV, newFileName);
 
                         setTimeout(() => {
-                            setInputValue("");
                             setDataToSearch({ site: "", interval: 1 });
-                            setFilteredClients([]);
-
                             toast.success("¡Descarga completada!", {
                                 position: "top-center",
                                 autoClose: 2000,
                                 hideProgressBar: true,
                             });
                         }, 1000);
-                    };
+                    }
                 })
                     .catch(err => {
-                        setTimeout(() => {
-                            setInputValue("");
-                            setDataToSearch({ site: "", interval: 1 });
-                            setDateToFilter("");
-                            setFilteredClients([]);
-
-                            if (err.status === 404) {
-                                toast.warning("No hay datos disponibles", {
-                                    position: "top-center",
-                                    autoClose: 2000,
-                                    hideProgressBar: true,
-                                });
-                            } else {
-                                toast.error("¡Error! Reintente o comuníquese con soporte", {
-                                    position: "top-center",
-                                    autoClose: 2000,
-                                    hideProgressBar: true,
-                                });
-                            }
-                        }, 1000);
-                        console.error(err);
+                        handleError(err);
                     });
             } else {
-                setTimeout(() => {
-                    setInputValue("");
-                    setDataToSearch({ site: "", interval: 1 });
-                    setFilteredClients([]);
-
-                    toast.warning("¡Error! Comuníquese con soporte", {
-                        position: "top-center",
-                        autoClose: 2000,
-                        hideProgressBar: true,
-                    });
-                }, 1000);
+                handleError();
             }
         })
             .catch(err => {
-                setTimeout(() => {
-                    setInputValue("");
-                    setDataToSearch({ site: "", interval: 1 });
-                    setFilteredClients([]);
-
-                    toast.warning("¡Error! Comuníquese con soporte", {
-                        position: "top-center",
-                        autoClose: 2000,
-                        hideProgressBar: true,
-                    });
-                }, 3000);
-                console.error(err);
+                handleError(err);
             });
     };
 
-    const handleClientSelect = (site) => {
-        setDataToSearch((prevData) => ({
-            ...prevData,
-            site,
-        }));
-        setInputValue(site);
-        setFilteredClients([]);
-    };
+    const handleError = (err) => {
+        setTimeout(() => {
+            setDataToSearch({ site: "", interval: 1 });
+            setDateToFilter("");
 
-    const handleInputFocus = () => {
-        if (inputValue === "") {
-            setFilteredClients(clients);
-        };
-    };
-
-    const handleInputBlur = () => {
-        if (inputValue === "") {
-            setFilteredClients([]);
-            setInputValue("");
-            setDataToSearch((prevData) => ({
-                ...prevData,
-                site: "",
-            }));
-        };
+            if (err?.status === 404) {
+                toast.warning("No hay datos disponibles", {
+                    position: "top-center",
+                    autoClose: 2000,
+                    hideProgressBar: true,
+                });
+            } else {
+                toast.error("¡Error! Reintente o comuníquese con soporte", {
+                    position: "top-center",
+                    autoClose: 2000,
+                    hideProgressBar: true,
+                });
+            }
+        }, 1000);
+        console.error(err);
     };
 
     const handleDateChange = (date) => {
         setDateToFilter(date);
     };
-
-    // const isButtonDisabled = 
-
-    useEffect(() => {
-        if (inputValue === "") {
-            setFilteredClients(clients);
-        } else {
-            setFilteredClients(
-                clients.filter(client =>
-                    client.name.toLowerCase().includes(inputValue.toLowerCase()) && client.name !== dataToSearch.site
-                )
-            );
-        };
-    }, [inputValue, dataToSearch.site]);
 
     return (
         <div className="full-container">
@@ -237,30 +167,20 @@ const Home = () => {
                     <h2 className="mb-4">Sábana de Tickets</h2>
                     <div className="mb-3">
                         <label htmlFor="site" className="form-label">Nombre de sitio</label>
-                        <input
-                            type="text"
-                            className="form-control"
+                        <select
+                            className="form-select"
                             id="site"
                             name="site"
-                            value={inputValue}
-                            onChange={handleInputChange}
-                            onFocus={handleInputFocus}
-                            onBlur={handleInputBlur}
-                            placeholder="Buscar por sitio..."
-                        />
-                        {filteredClients.length > 0 && (
-                            <ul className="list-group mt-2 clients-filter">
-                                {filteredClients.map((client) => (
-                                    <li
-                                        key={client.id}
-                                        className="list-group-item"
-                                        onClick={() => handleClientSelect(client.name)}
-                                    >
-                                        {client.name}
-                                    </li>
-                                ))}
-                            </ul>
-                        )}
+                            value={dataToSearch.site}
+                            onChange={handleSelectChange}
+                        >
+                            <option value="">Seleccione sitio</option>
+                            {clients.map(client => (
+                                <option key={client.id} value={client.name}>
+                                    {client.name}
+                                </option>
+                            ))}
+                        </select>
                     </div>
 
                     <div className="mb-3">
@@ -317,8 +237,7 @@ const Home = () => {
                         type="button"
                         className="btn btn-primary"
                         onClick={handleDownloadClick}
-                        // disabled={inputValue !== dataToSearch.site}
-                        disabled={(dataToSearch.interval === 3 && dateToFilter === "") || inputValue !== dataToSearch.site}
+                        disabled={(dataToSearch.interval === 3 && dateToFilter === "")}
                     >
                         DESCARGAR CSV
                     </button>
