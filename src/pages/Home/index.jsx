@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { toast, ToastContainer } from 'react-toastify';
 import clients from '../../constants/clients';
 import connections from '../../connections';
@@ -12,8 +12,10 @@ const Home = () => {
         site: "",
         interval: 1,
     });
-
     const [dateToFilter, setDateToFilter] = useState("");
+    const [inputValue, setInputValue] = useState("");
+    const [filteredClients, setFilteredClients] = useState(clients);
+    const [showDropdown, setShowDropdown] = useState(false);
 
     const generateCSV = (data) => {
         const BOM = '\uFEFF';
@@ -42,12 +44,28 @@ const Home = () => {
         document.body.removeChild(link);
     };
 
-    const handleSelectChange = (event) => {
-        const { value } = event.target;
-        setDataToSearch((prevData) => ({
-            ...prevData,
-            site: value,
-        }));
+    const handleInputChange = (e) => {
+        const value = e.target.value;
+        setInputValue(value);
+        setFilteredClients(
+            clients.filter(client =>
+                client.name.toLowerCase().includes(value.toLowerCase())
+            )
+        );
+        setShowDropdown(true);
+    };
+
+    const handleClientSelect = (clientName) => {
+        setDataToSearch((prevData) => ({ ...prevData, site: clientName === "Todos los puntos tácticos" ? "" : clientName }));
+        setInputValue(clientName);
+        // if(clientName !== "Todos los puntos tácticos"){
+        setFilteredClients(
+            clients.filter(client =>
+                client.name.toLowerCase().includes(clientName.toLowerCase())
+            )
+        );
+        // }
+        setShowDropdown(false);
     };
 
     const handleRadioChange = (event) => {
@@ -63,93 +81,55 @@ const Home = () => {
 
     const handleDownloadClick = () => {
         const { site, interval } = dataToSearch;
-
         let now = new Date();
-
         if (dateToFilter) {
             now = new Date(dateToFilter);
         }
-
         const date = now.toISOString();
-
         const daily = interval === 1;
         const weekly = interval === 2;
         const specifies = interval === 3;
-
         const clientName = "Covivi";
-
-        const newData = {
-            date,
-            daily,
-            weekly,
-            specifies,
-            clientName,
-            site,
-        };
-
+        const newData = { date, daily, weekly, specifies, clientName, site };
         let newFileName = `SABANA_${daily ? "DAILY" : weekly ? "WEEKLY" : "FILTER_BY_DAY"}-${date}_${clientName}`;
-
         if (site !== "") {
             newFileName += site.split("-")[0].trim();
         }
-
         newFileName += ".csv";
 
         connections.genTokenZoho().then(response => {
-            toast.info("Descarga en curso, por favor espere...", {
-                position: "top-center",
-                autoClose: 2000,
-                hideProgressBar: true,
-            });
+            toast.info("Descarga en curso, por favor espere...", { position: "top-center", autoClose: 2000, hideProgressBar: true });
             if (response.data.success) {
                 const tokenZoho = response.data.data.auth_token;
                 connections.exportTickets(tokenZoho, newData).then(resp => {
                     if (resp.data.success) {
                         const { data } = resp.data;
-
                         const arrayToCSV = generateCSV(data);
-
                         downloadCSV(arrayToCSV, newFileName);
-
                         setTimeout(() => {
                             setDataToSearch({ site: "", interval: 1 });
-                            toast.success("¡Descarga completada!", {
-                                position: "top-center",
-                                autoClose: 2000,
-                                hideProgressBar: true,
-                            });
+                            setInputValue("");
+                            setFilteredClients(clients);
+                            toast.success("¡Descarga completada!", { position: "top-center", autoClose: 2000, hideProgressBar: true });
                         }, 1000);
                     }
-                })
-                    .catch(err => {
-                        handleError(err);
-                    });
+                }).catch(err => handleError(err));
             } else {
                 handleError();
             }
-        })
-            .catch(err => {
-                handleError(err);
-            });
+        }).catch(err => handleError(err));
     };
 
     const handleError = (err) => {
         setTimeout(() => {
             setDataToSearch({ site: "", interval: 1 });
+            setInputValue("");
             setDateToFilter("");
-
+            setFilteredClients(clients);
             if (err?.status === 404) {
-                toast.warning("No hay datos disponibles", {
-                    position: "top-center",
-                    autoClose: 2000,
-                    hideProgressBar: true,
-                });
+                toast.warning("No hay datos disponibles", { position: "top-center", autoClose: 2000, hideProgressBar: true });
             } else {
-                toast.error("¡Error! Reintente o comuníquese con soporte", {
-                    position: "top-center",
-                    autoClose: 2000,
-                    hideProgressBar: true,
-                });
+                toast.error("¡Error! Reintente o comuníquese con soporte", { position: "top-center", autoClose: 2000, hideProgressBar: true });
             }
         }, 1000);
         console.error(err);
@@ -167,20 +147,34 @@ const Home = () => {
                     <h2 className="mb-4">Sábana de Tickets</h2>
                     <div className="mb-3">
                         <label htmlFor="site" className="form-label">Puntos tácticos</label>
-                        <select
-                            className="form-select"
+                        <input
+                            type="text"
                             id="site"
                             name="site"
-                            value={dataToSearch.site}
-                            onChange={handleSelectChange}
-                        >
-                            <option value="">Todos los puntos tácticos</option>
-                            {clients.map(client => (
-                                <option key={client.id} value={client.name}>
-                                    {client.name}
-                                </option>
-                            ))}
-                        </select>
+                            value={inputValue}
+                            onChange={handleInputChange}
+                            className="form-control"
+                            placeholder="Buscar puntos tácticos"
+                            onFocus={() => setShowDropdown(true)}
+                        />
+                        {showDropdown && (
+                            <ul className="menu-desp">
+                                {/* <li onClick={() => handleClientSelect("")}>
+                                    Todos los puntos tácticos
+                                </li> */}
+                                {filteredClients.length > 0 ? (
+                                    filteredClients.map(client => {
+                                        return (
+                                            <li key={client.id} onClick={() => handleClientSelect(client.name)}>
+                                                {client.name}
+                                            </li>
+                                        )
+                                    })
+                                ) : (
+                                    <li>No se encontraron coincidencias</li>
+                                )}
+                            </ul>
+                        )}
                     </div>
 
                     <div className="mb-3">

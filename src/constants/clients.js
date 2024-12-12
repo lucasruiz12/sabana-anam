@@ -1,5 +1,9 @@
 const clients = [
     {
+        "id": 0,
+        "name": "Todos los puntos tácticos"
+    },
+    {
         "id": 32,
         "name": "32 - AGE - La Virgen"
     },

@@ -72,3 +72,24 @@
         width: 70vw;
     }
 }
+
+.menu-desp {
+    position: absolute;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    z-index: 1000; /* Asegura que esté por encima de otros elementos */
+    width: 47vw; /* Ajusta al ancho del input */
+    max-height: 200px; /* Opcional: controla la altura máxima */
+    overflow-y: scroll; /* Permite desplazarse si hay muchas opciones */
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: block; /* Asegúrate de que sea visible */
+}
+.menu-desp li {
+    padding: 8px 12px;
+    cursor: pointer;
+}
+.menu-desp li:hover {
+    background-color: #f0f0f0;
+}
