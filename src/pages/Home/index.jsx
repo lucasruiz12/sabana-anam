@@ -6,7 +6,6 @@ import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import 'react-toastify/dist/ReactToastify.css';
 import './style.css';
-import { arrayTest } from '../../constants/arrayTest';
 
 const Home = () => {
     const [dataToSearch, setDataToSearch] = useState({
@@ -22,30 +21,6 @@ const Home = () => {
         const BOM = '\uFEFF';
         const headers = Object.keys(data[0]);
         const rows = data.map(row =>
-            headers.map(header =>
-                `"${(row[header] || "").toString().replace(/"/g, '""')}"`
-            ).join(',').trim()
-        );
-        const csvContent = [headers.join(','), ...rows].join('\n');
-
-        return BOM + csvContent;
-    };
-
-    const generateCSVToPost = (data) => {
-        // console.log(data);
-        // const newData = data.map(el => {
-        //     return {
-        //         "ID ticket": el["Número de reporte"],
-        //         "Estado": el["Estado"],
-        //         "Resolucion": el["Comentario de resolución"],
-        //     }
-        // });
-
-        const newData = arrayTest;
-
-        const BOM = '\uFEFF';
-        const headers = Object.keys(newData[0]);
-        const rows = newData.map(row =>
             headers.map(header =>
                 `"${(row[header] || "").toString().replace(/"/g, '""')}"`
             ).join(',').trim()
@@ -140,17 +115,12 @@ const Home = () => {
                     if (resp.data.success) {
                         const { data } = resp.data;
                         const arrayToCSV = generateCSVToDownload(data);
-                        const arrayToPost = generateCSVToPost(data);
                         downloadCSV(arrayToCSV, newFileName);
                         setTimeout(() => {
                             setDataToSearch({ site: "", interval: 9 });
                             setInputValue("");
                             setFilteredClients(clients);
                             toast.success("¡Descarga completada!", { position: "top-center", autoClose: 2000, hideProgressBar: true });
-                            connections.uploadData(tokenZoho, arrayToPost).then(response => {
-                                console.log("LISTO", response);
-                            })
-                                .catch(err => console.error(err));
                         }, 1000);
                     }
                 }).catch(err => handleError(err));
