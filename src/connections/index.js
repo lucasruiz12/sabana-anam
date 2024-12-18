@@ -1,5 +1,5 @@
 import axios from "axios";
-import { ACCESS_KEY_ZOHO, ACCESS_SECRET_ZOHO, apiUrl, EMAIL_ZOHO } from "../constants"
+import { ACCESS_KEY_ZOHO, ACCESS_SECRET_ZOHO, apiUrl, EMAIL_ZOHO, ngrok } from "../constants"
 
 export default {
     genTokenZoho: () => {
@@ -12,7 +12,7 @@ export default {
                 // 'access_key': ACCESS_KEY_ZOHO,
                 // 'access_secret': ACCESS_SECRET_ZOHO,
             },
-        }).post(`${apiUrl}/gentoken`, data);
+        }).post(`${ngrok}/gentoken`, data);
     },
 
     exportTickets: (tokenZoho, data) => {
@@ -22,7 +22,24 @@ export default {
                 // 'access_key': ACCESS_KEY_ZOHO,
                 // 'access_secret': ACCESS_SECRET_ZOHO,
             },
-        }).post(`${apiUrl}/export/filterTickets`, data);
+        }).post(`${ngrok}/export/filterTickets`, data);
+    },
+    
+    uploadData: (tokenZoho, file) => {
+
+        const formData = new FormData();
+        formData.append("fileticket", file);
+
+        return axios.create({
+            headers: {
+                'Authorization': tokenZoho,
+                'access_key': ACCESS_KEY_ZOHO,
+                'access_secret': ACCESS_SECRET_ZOHO,
+                'Content-Type': 'multipart/form-data',
+                'client_name': 'Covivi'
+            },
+        // }).post(`${apiUrl}/upload/tickets/status`, formData);
+        }).post(`${ngrok}/upload/tickets/status`, formData);
     },
 };
 
