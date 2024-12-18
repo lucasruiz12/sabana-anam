@@ -1,5 +1,5 @@
 import axios from "axios";
-import { ACCESS_KEY_ZOHO, ACCESS_SECRET_ZOHO, apiUrl, EMAIL_ZOHO, ngrok } from "../constants"
+import { ACCESS_KEY_ZOHO, ACCESS_SECRET_ZOHO, apiUrl, EMAIL_ZOHO } from "../constants"
 
 export default {
     genTokenZoho: () => {
@@ -12,7 +12,7 @@ export default {
                 // 'access_key': ACCESS_KEY_ZOHO,
                 // 'access_secret': ACCESS_SECRET_ZOHO,
             },
-        }).post(`${ngrok}/gentoken`, data);
+        }).post(`${apiUrl}/gentoken`, data);
     },
 
     exportTickets: (tokenZoho, data) => {
@@ -22,7 +22,7 @@ export default {
                 // 'access_key': ACCESS_KEY_ZOHO,
                 // 'access_secret': ACCESS_SECRET_ZOHO,
             },
-        }).post(`${ngrok}/export/filterTickets`, data);
+        }).post(`${apiUrl}/export/filterTickets`, data);
     },
     
     uploadData: (tokenZoho, file) => {
@@ -38,8 +38,7 @@ export default {
                 'Content-Type': 'multipart/form-data',
                 'client_name': 'Covivi'
             },
-        // }).post(`${apiUrl}/upload/tickets/status`, formData);
-        }).post(`${ngrok}/upload/tickets/status`, formData);
+        }).post(`${apiUrl}/upload/tickets/status`, formData);
     },
 };
 
