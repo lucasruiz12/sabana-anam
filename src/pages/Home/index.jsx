@@ -101,7 +101,7 @@ const Home = () => {
         const monthly = interval === 4;
         const clientName = "Covivi";
         const newData = { date, daily, weekly, specifies, monthly, clientName, site };
-        let newFileName = `SABANA_${daily ? "DAILY" : weekly ? "WEEKLY" : daily ? "FILTER_BY_DAY" : specifies ? "FILTER_ONE_DAY" : "ALL_DATA"}-${date}_${clientName}`;
+        let newFileName = `SABANA_${daily ? "DAILY" : weekly ? "WEEKLY" : daily ? "FILTER_BY_DAY" : specifies ? "FILTER_ONE_DAY" : monthly ? "MONTHLY" : "ALL_DATA"}-${date}_${clientName}`;
         if (site !== "") {
             newFileName += site.split("-")[0].trim();
         }
