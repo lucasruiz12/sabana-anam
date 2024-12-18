@@ -10,7 +10,7 @@ import './style.css';
 const Home = () => {
     const [dataToSearch, setDataToSearch] = useState({
         site: "",
-        interval: 1,
+        interval: 9,
     });
     const [dateToFilter, setDateToFilter] = useState("");
     const [inputValue, setInputValue] = useState("");
@@ -70,9 +70,18 @@ const Home = () => {
 
     const handleRadioChange = (event) => {
         const { value } = event.target;
+
+        if (value === "9") {
+            handleClientSelect("Todos los puntos tácticos");
+        };
+
         if (value !== "3") {
             setDateToFilter("");
-        }
+            setDataToSearch({
+                site: "",
+                interval: parseInt(value),
+            });
+        };
         setDataToSearch((prevData) => ({
             ...prevData,
             interval: parseInt(value),
@@ -85,12 +94,13 @@ const Home = () => {
         if (dateToFilter) {
             now = new Date(dateToFilter);
         }
-        const date = now.toISOString();
+        const date = interval === 9 ? "" : now.toISOString();
         const daily = interval === 1;
         const weekly = interval === 2;
         const specifies = interval === 3;
+        const monthly = interval === 4;
         const clientName = "Covivi";
-        const newData = { date, daily, weekly, specifies, clientName, site };
+        const newData = { date, daily, weekly, specifies, monthly, clientName, site };
         let newFileName = `SABANA_${daily ? "DAILY" : weekly ? "WEEKLY" : "FILTER_BY_DAY"}-${date}_${clientName}`;
         if (site !== "") {
             newFileName += site.split("-")[0].trim();
@@ -107,7 +117,7 @@ const Home = () => {
                         const arrayToCSV = generateCSV(data);
                         downloadCSV(arrayToCSV, newFileName);
                         setTimeout(() => {
-                            setDataToSearch({ site: "", interval: 1 });
+                            setDataToSearch({ site: "", interval: 9 });
                             setInputValue("");
                             setFilteredClients(clients);
                             toast.success("¡Descarga completada!", { position: "top-center", autoClose: 2000, hideProgressBar: true });
@@ -122,7 +132,7 @@ const Home = () => {
 
     const handleError = (err) => {
         setTimeout(() => {
-            setDataToSearch({ site: "", interval: 1 });
+            setDataToSearch({ site: "", interval: 9 });
             setInputValue("");
             setDateToFilter("");
             setFilteredClients(clients);
@@ -155,9 +165,10 @@ const Home = () => {
                             onChange={handleInputChange}
                             className="form-control"
                             placeholder="Buscar puntos tácticos"
-                            onFocus={() => setShowDropdown(true)}
+                            onFocus={() => dataToSearch.interval !== 9 && setShowDropdown(true)}
+                            disabled={dataToSearch.interval === 9}
                         />
-                        {showDropdown && (
+                        {showDropdown && dataToSearch.interval !== 9 && (
                             <ul className="menu-desp">
                                 {/* <li onClick={() => handleClientSelect("")}>
                                     Todos los puntos tácticos
@@ -179,6 +190,18 @@ const Home = () => {
 
                     <div className="mb-3">
                         <label className="form-label">Intervalo</label>
+                        <div className="form-check">
+                            <input
+                                type="radio"
+                                className="form-check-input"
+                                id="all"
+                                name="interval"
+                                value="9"
+                                checked={dataToSearch.interval === 9}
+                                onChange={handleRadioChange}
+                            />
+                            <label className="form-check-label" htmlFor="all">Todo</label>
+                        </div>
                         <div className="form-check">
                             <input
                                 type="radio"
