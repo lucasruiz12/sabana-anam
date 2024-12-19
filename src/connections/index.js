@@ -27,9 +27,6 @@ export default {
     
     uploadData: (tokenZoho, file) => {
 
-        const formData = new FormData();
-        formData.append("fileticket", file);
-
         return axios.create({
             headers: {
                 'Authorization': tokenZoho,
@@ -38,7 +35,7 @@ export default {
                 'Content-Type': 'multipart/form-data',
                 'client_name': 'Covivi'
             },
-        }).post(`${apiUrl}/upload/tickets/status`, formData);
+        }).post(`${apiUrl}/upload/tickets/status`, file);
     },
 };
 

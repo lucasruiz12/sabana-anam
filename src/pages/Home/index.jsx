@@ -6,6 +6,8 @@ import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import 'react-toastify/dist/ReactToastify.css';
 import './style.css';
+import Navbar from '../../components/Navbar';
+import FormUpdate from '../../components/FormUpdate';
 
 const Home = () => {
     const [dataToSearch, setDataToSearch] = useState({
@@ -16,6 +18,7 @@ const Home = () => {
     const [inputValue, setInputValue] = useState("");
     const [filteredClients, setFilteredClients] = useState(clients);
     const [showDropdown, setShowDropdown] = useState(false);
+    const [currentTab, setCurrentTab] = useState(1);
 
     const generateCSVToDownload = (data) => {
         const BOM = '\uFEFF';
@@ -151,116 +154,119 @@ const Home = () => {
 
     return (
         <div className="full-container">
+            <Navbar currentTab={currentTab} setCurrentTab={setCurrentTab} />
             <div className="head-decoration"></div>
-            <div className="container p-4 form-container">
-                <form className="form-search">
-                    <h2 className="mb-4">Sábana de Tickets</h2>
-                    <div className="mb-3">
-                        <label htmlFor="site" className="form-label">Puntos tácticos</label>
-                        <input
-                            type="text"
-                            id="site"
-                            name="site"
-                            value={inputValue}
-                            onChange={handleInputChange}
-                            className="form-control"
-                            placeholder="Buscar puntos tácticos"
-                            onFocus={() => dataToSearch.interval !== 9 && setShowDropdown(true)}
-                            disabled={dataToSearch.interval === 9}
-                        />
-                        {showDropdown && dataToSearch.interval !== 9 && (
-                            <ul className="menu-desp">
-                                {/* <li onClick={() => handleClientSelect("")}>
-                                    Todos los puntos tácticos
-                                </li> */}
-                                {filteredClients.length > 0 ? (
-                                    filteredClients.map(client => {
-                                        return (
-                                            <li key={client.id} onClick={() => handleClientSelect(client.name)}>
-                                                {client.name}
-                                            </li>
-                                        )
-                                    })
-                                ) : (
-                                    <li>No se encontraron coincidencias</li>
-                                )}
-                            </ul>
-                        )}
-                    </div>
-
-                    <div className="mb-3">
-                        <label className="form-label">Intervalo</label>
-                        <div className="form-check">
-                            <input
-                                type="radio"
-                                className="form-check-input"
-                                id="all"
-                                name="interval"
-                                value="9"
-                                checked={dataToSearch.interval === 9}
-                                onChange={handleRadioChange}
-                            />
-                            <label className="form-check-label" htmlFor="all">Todo</label>
-                        </div>
-                        <div className="form-check">
-                            <input
-                                type="radio"
-                                className="form-check-input"
-                                id="daily"
-                                name="interval"
-                                value="1"
-                                checked={dataToSearch.interval === 1}
-                                onChange={handleRadioChange}
-                            />
-                            <label className="form-check-label" htmlFor="daily">Diario</label>
-                        </div>
-                        <div className="form-check">
-                            <input
-                                type="radio"
-                                className="form-check-input"
-                                id="weekly"
-                                name="interval"
-                                value="2"
-                                checked={dataToSearch.interval === 2}
-                                onChange={handleRadioChange}
-                            />
-                            <label className="form-check-label" htmlFor="weekly">Semanal</label>
-                        </div>
-                        <div className="form-check">
-                            <input
-                                type="radio"
-                                className="form-check-input"
-                                id="specificDay"
-                                name="interval"
-                                value="3"
-                                checked={dataToSearch.interval === 3}
-                                onChange={handleRadioChange}
-                            />
-                            <label className="form-check-label" htmlFor="specificDay">Día específico</label>
-                            {dataToSearch.interval === 3 && (
-                                <DatePicker
-                                    selected={dateToFilter}
-                                    onChange={handleDateChange}
-                                    dateFormat="yyyy-MM-dd"
-                                    className="form-date-control"
-                                    placeholderText="Seleccione una fecha"
-                                    disabledKeyboardNavigation
+            {
+                currentTab === 1 ?
+                    <div className="container p-4 form-container">
+                        <form className="form-search">
+                            <h2 className="mb-4">Sábana de Tickets</h2>
+                            <div className="mb-3">
+                                <label htmlFor="site" className="form-label">Puntos tácticos</label>
+                                <input
+                                    type="text"
+                                    id="site"
+                                    name="site"
+                                    value={inputValue}
+                                    onChange={handleInputChange}
+                                    className="form-control"
+                                    placeholder="Buscar puntos tácticos"
+                                    onFocus={() => dataToSearch.interval !== 9 && setShowDropdown(true)}
+                                    disabled={dataToSearch.interval === 9}
                                 />
-                            )}
-                        </div>
-                    </div>
+                                {showDropdown && dataToSearch.interval !== 9 && (
+                                    <ul className="menu-desp">
+                                        {filteredClients.length > 0 ? (
+                                            filteredClients.map(client => {
+                                                return (
+                                                    <li key={client.id} onClick={() => handleClientSelect(client.name)}>
+                                                        {client.name}
+                                                    </li>
+                                                )
+                                            })
+                                        ) : (
+                                            <li>No se encontraron coincidencias</li>
+                                        )}
+                                    </ul>
+                                )}
+                            </div>
 
-                    <button
-                        type="button"
-                        className="btn btn-primary"
-                        onClick={handleDownloadClick}
-                        disabled={(dataToSearch.interval === 3 && dateToFilter === "")}
-                    >
-                        DESCARGAR CSV
-                    </button>
-                </form>
-                <ToastContainer />
-            </div>
+                            <div className="mb-3">
+                                <label className="form-label">Intervalo</label>
+                                <div className="form-check">
+                                    <input
+                                        type="radio"
+                                        className="form-check-input"
+                                        id="all"
+                                        name="interval"
+                                        value="9"
+                                        checked={dataToSearch.interval === 9}
+                                        onChange={handleRadioChange}
+                                    />
+                                    <label className="form-check-label" htmlFor="all">Todo</label>
+                                </div>
+                                <div className="form-check">
+                                    <input
+                                        type="radio"
+                                        className="form-check-input"
+                                        id="daily"
+                                        name="interval"
+                                        value="1"
+                                        checked={dataToSearch.interval === 1}
+                                        onChange={handleRadioChange}
+                                    />
+                                    <label className="form-check-label" htmlFor="daily">Diario</label>
+                                </div>
+                                <div className="form-check">
+                                    <input
+                                        type="radio"
+                                        className="form-check-input"
+                                        id="weekly"
+                                        name="interval"
+                                        value="2"
+                                        checked={dataToSearch.interval === 2}
+                                        onChange={handleRadioChange}
+                                    />
+                                    <label className="form-check-label" htmlFor="weekly">Semanal</label>
+                                </div>
+                                <div className="form-check">
+                                    <input
+                                        type="radio"
+                                        className="form-check-input"
+                                        id="specificDay"
+                                        name="interval"
+                                        value="3"
+                                        checked={dataToSearch.interval === 3}
+                                        onChange={handleRadioChange}
+                                    />
+                                    <label className="form-check-label" htmlFor="specificDay">Día específico</label>
+                                    {dataToSearch.interval === 3 && (
+                                        <DatePicker
+                                            selected={dateToFilter}
+                                            onChange={handleDateChange}
+                                            dateFormat="yyyy-MM-dd"
+                                            className="form-date-control"
+                                            placeholderText="Seleccione una fecha"
+                                            disabledKeyboardNavigation
+                                        />
+                                    )}
+                                </div>
+                            </div>
+
+                            <button
+                                type="button"
+                                className="btn btn-primary"
+                                onClick={handleDownloadClick}
+                                disabled={(dataToSearch.interval === 3 && dateToFilter === "")}
+                            >
+                                DESCARGAR CSV
+                            </button>
+                        </form>
+                        <ToastContainer />
+                    </div>
+                    :
+                    <FormUpdate />
+            }
         </div>
     );
 };
