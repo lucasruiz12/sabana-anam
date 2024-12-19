@@ -30,10 +30,10 @@ const FormUpdate = () => {
         if (!selectedFile) {
             toast.warning("Por favor, seleccione un archivo antes de continuar", { autoClose: 2000 });
             return;
-        }
+        };
 
         const formData = new FormData();
-        formData.append('file', selectedFile);
+        formData.append('filetickets', selectedFile);
 
         try {
 

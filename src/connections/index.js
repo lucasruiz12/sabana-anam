@@ -33,7 +33,7 @@ export default {
                 'access_key': ACCESS_KEY_ZOHO,
                 'access_secret': ACCESS_SECRET_ZOHO,
                 'Content-Type': 'multipart/form-data',
-                'client_name': 'Covivi'
+                'client_name': 'COVIVI'
             },
         }).post(`${apiUrl}/upload/tickets/status`, file);
     },
