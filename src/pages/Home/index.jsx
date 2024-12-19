@@ -252,15 +252,16 @@ const Home = () => {
                                     )}
                                 </div>
                             </div>
-
-                            <button
-                                type="button"
-                                className="btn btn-primary"
-                                onClick={handleDownloadClick}
-                                disabled={(dataToSearch.interval === 3 && dateToFilter === "")}
-                            >
-                                DESCARGAR CSV
-                            </button>
+                            <div style={{ display: "flex", justifyContent: "center" }}>
+                                <button
+                                    type="button"
+                                    className="btn btn-primary btn-download-csv"
+                                    onClick={handleDownloadClick}
+                                    disabled={(dataToSearch.interval === 3 && dateToFilter === "")}
+                                >
+                                    DESCARGAR CSV
+                                </button>
+                            </div>
                         </form>
                         <ToastContainer />
                     </div>

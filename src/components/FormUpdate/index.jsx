@@ -90,25 +90,23 @@ const FormUpdate = () => {
                 )}
             </div>
 
-            <div style={{ display: "flex", width: "100%", justifyContent: "space-evenly" }}>
+            <div style={{ display: "flex", alignItems: "center", flexDirection: "column", width: "100%" }}>
                 <button
                     type="button"
-                    style={{ width: "35%" }}
+                    style={{ width: "50%" }}
                     className="btn btn-primary me-2"
                     onClick={handleUpload}
                     disabled={!selectedFile}
                 >
                     Subir y Actualizar
                 </button>
-                <button
-                    type="button"
-                    style={{ width: "35%" }}
-                    className="btn btn-secondary"
-                    onClick={handleDownloadTemplate}
-                >
-                    Descargar Plantilla
-                </button>
             </div>
+            <p
+                className="text-download"
+                onClick={handleDownloadTemplate}
+            >
+                Descargar archivo de ejemplo (formato CSV) para cargar los datos correctamente
+            </p>
 
             <ToastContainer />
         </div>

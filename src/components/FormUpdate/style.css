@@ -11,6 +11,17 @@
     margin-top: -10vh;
 }
 
+.text-download{
+    width: 100%;
+    cursor: pointer;
+    text-decoration: none;
+    color: #007bff
+}
+
+.text-download:hover{
+    color: #0056b3;
+    text-decoration: underline;
+}
 
 @media (max-width: 986px){
     .container-update{
