@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Papa from 'papaparse'; // Asegúrate de instalar papaparse con `npm install papaparse`
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './style.css';
@@ -7,12 +8,51 @@ import connections from '../../connections';
 const FormUpdate = () => {
     const [selectedFile, setSelectedFile] = useState(null);
 
+    // Validación del contenido del archivo CSV
+    const validateCSV = (data) => {
+        const requiredColumns = ["ID ticket", "Estado", "Resolucion"];
+        const errors = [];
+
+        // Validar columnas
+        const columns = data[0];
+        const missingColumns = requiredColumns.filter((col) => !columns.includes(col));
+        if (missingColumns.length > 0) {
+            errors.push(`Faltan las columnas: ${missingColumns.join(", ")}`);
+        }
+
+        // Validar filas
+        data.slice(1).forEach((row, index) => {
+            const estadoIndex = columns.indexOf("Estado");
+            const resolucionIndex = columns.indexOf("Resolucion");
+            if (row[estadoIndex] === "Resuelto" && (!row[resolucionIndex] || row[resolucionIndex].trim() === "")) {
+                errors.push(`Error en la fila ${index + 2}: "Estado" es "Resuelto" pero "Resolucion" está vacío.`);
+            }
+        });
+
+        return errors;
+    };
+
     // Handler para seleccionar archivo
     const handleFileChange = (event) => {
         const file = event.target.files[0];
         if (file && file.type === "text/csv") {
-            setSelectedFile(file);
-            toast.success("Archivo cargado correctamente", { autoClose: 2000 });
+            Papa.parse(file, {
+                complete: (result) => {
+                    const errors = validateCSV(result.data);
+                    if (errors.length > 0) {
+                        toast.error(errors.join(" "), { autoClose: 4000 });
+                        setSelectedFile(null);
+                        document.getElementById('csvFile').value = '';
+                    } else {
+                        setSelectedFile(file);
+                        toast.success("Archivo cargado correctamente", { autoClose: 2000 });
+                    }
+                },
+                error: () => {
+                    toast.error("Error al procesar el archivo CSV", { autoClose: 2000 });
+                },
+                skipEmptyLines: true,
+            });
         } else {
             toast.error("Solo se permiten archivos CSV", { autoClose: 2000 });
         }
@@ -36,7 +76,6 @@ const FormUpdate = () => {
         formData.append('filetickets', selectedFile);
 
         try {
-
             const genToken = await connections.genTokenZoho();
             const tokenZoho = await genToken.data.data.auth_token;
 
