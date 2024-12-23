@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import Papa from 'papaparse'; // Asegúrate de instalar papaparse con `npm install papaparse`
 import { toast, ToastContainer } from 'react-toastify';
+import connections from '../../connections';
+import ModalCode from '../ModalCode';
 import 'react-toastify/dist/ReactToastify.css';
 import './style.css';
-import connections from '../../connections';
 
-const FormUpdate = () => {
+const FormUpdate = ({ showModal, setShowModal }) => {
     const [selectedFile, setSelectedFile] = useState(null);
 
     // Validación del contenido del archivo CSV
@@ -38,6 +39,15 @@ const FormUpdate = () => {
         if (file && file.type === "text/csv") {
             Papa.parse(file, {
                 complete: (result) => {
+                    const rows = result.data;
+
+                    if (rows.length > 200) {
+                        toast.error("El archivo excede el límite máximo de 200 registros. Por favor, ajuste el contenido.", { autoClose: 4000 });
+                        setSelectedFile(null);
+                        document.getElementById('csvFile').value = '';
+                        return;
+                    };
+
                     const errors = validateCSV(result.data);
                     if (errors.length > 0) {
                         toast.error(errors.join(" "), { autoClose: 4000 });
@@ -67,30 +77,42 @@ const FormUpdate = () => {
 
     // Handler para subir el archivo a la API
     const handleUpload = async () => {
-        if (!selectedFile) {
-            toast.warning("Por favor, seleccione un archivo antes de continuar", { autoClose: 2000 });
-            return;
-        };
 
-        const formData = new FormData();
-        formData.append('filetickets', selectedFile);
+        const validation = JSON.parse(localStorage.getItem("validationUpdate"));
+        const now = new Date();
+        const confirmationDate = now.toLocaleDateString();
 
-        try {
-            const genToken = await connections.genTokenZoho();
-            const tokenZoho = await genToken.data.data.auth_token;
+        if (validation !== confirmationDate) {
 
-            const response = await connections.uploadData(tokenZoho, formData);
-
-            if (response.data.success) {
-                toast.success("Base de datos actualizada correctamente", { autoClose: 2000 });
-                document.getElementById('csvFile').value = '';
-                setSelectedFile(null);
-            } else {
-                throw new Error("Error en la actualización");
+            if (!selectedFile) {
+                toast.warning("Por favor, seleccione un archivo antes de continuar", { autoClose: 2000 });
+                return;
             };
-        } catch (error) {
-            console.error(error);
-            toast.error("Error al actualizar la base de datos", { autoClose: 2000 });
+
+            const formData = new FormData();
+            formData.append('filetickets', selectedFile);
+
+            try {
+                toast.info("Cargando datos. Aguarde unos segundos.", { autoClose: 2000 })
+                const genToken = await connections.genTokenZoho();
+                const tokenZoho = await genToken.data.data.auth_token;
+
+                const response = await connections.uploadData(tokenZoho, formData);
+
+                if (response.data.success) {
+                    localStorage.setItem("validationUpdate", JSON.stringify(confirmationDate));
+                    toast.success("Base de datos actualizada correctamente", { autoClose: 2000 });
+                    document.getElementById('csvFile').value = '';
+                    setSelectedFile(null);
+                } else {
+                    throw new Error("Error en la actualización");
+                };
+            } catch (error) {
+                console.error(error);
+                toast.error("Error al actualizar la base de datos", { autoClose: 2000 });
+            }
+        } else {
+            toast.error("Ya realizaste tu carga diaria. Intenta nuevamente mañana", { autoClose: 2000 });
         }
     };
 
@@ -134,7 +156,7 @@ const FormUpdate = () => {
                     type="button"
                     style={{ width: "50%" }}
                     className="btn btn-primary me-2"
-                    onClick={handleUpload}
+                    onClick={() => setShowModal(true)}
                     disabled={!selectedFile}
                 >
                     Subir y Actualizar
@@ -146,6 +168,10 @@ const FormUpdate = () => {
             >
                 Descargar archivo de ejemplo (formato CSV) para cargar los datos correctamente
             </p>
+
+            {
+                showModal && <ModalCode modal={showModal} onHide={() => setShowModal(false)} submitData={handleUpload} />
+            }
 
             <ToastContainer />
         </div>

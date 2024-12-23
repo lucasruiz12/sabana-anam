@@ -3,11 +3,12 @@ import { toast, ToastContainer } from 'react-toastify';
 import clients from '../../constants/clients';
 import connections from '../../connections';
 import DatePicker from 'react-datepicker';
+import Navbar from '../../components/Navbar';
+import FormUpdate from '../../components/FormUpdate';
+import ModalCode from '../../components/ModalCode';
 import "react-datepicker/dist/react-datepicker.css";
 import 'react-toastify/dist/ReactToastify.css';
 import './style.css';
-import Navbar from '../../components/Navbar';
-import FormUpdate from '../../components/FormUpdate';
 
 const Home = () => {
     const [dataToSearch, setDataToSearch] = useState({
@@ -19,6 +20,7 @@ const Home = () => {
     const [filteredClients, setFilteredClients] = useState(clients);
     const [showDropdown, setShowDropdown] = useState(false);
     const [currentTab, setCurrentTab] = useState(1);
+    const [showModal, setShowModal] = useState(false);
 
     const generateCSVToDownload = (data) => {
         const BOM = '\uFEFF';
@@ -94,6 +96,7 @@ const Home = () => {
     const handleDownloadClick = () => {
         const { site, interval } = dataToSearch;
         let now = new Date();
+        
         if (dateToFilter) {
             now = new Date(dateToFilter);
         }
@@ -105,13 +108,42 @@ const Home = () => {
         const clientName = "Covivi";
         const newData = { date, daily, weekly, specifies, monthly, clientName, site };
         let newFileName = `SABANA_${daily ? "DAILY" : weekly ? "WEEKLY" : daily ? "FILTER_BY_DAY" : specifies ? "FILTER_ONE_DAY" : monthly ? "MONTHLY" : "ALL_DATA"}-${date}_${clientName}`;
+    
         if (site !== "") {
             newFileName += site.split("-")[0].trim();
         }
         newFileName += ".csv";
-
+    
+        // Validación de descarga
+        const validation = JSON.parse(localStorage.getItem("validationDownload"));
+        const confirmationDate = now.toLocaleDateString();
+    
+        if (!validation) {
+            // Si no existe validación, se crea y se permite la descarga
+            localStorage.setItem("validationDownload", JSON.stringify({ date: confirmationDate, count: 1 }));
+            proceedWithDownload(newData, newFileName);
+        } else {
+            if (validation.date === confirmationDate) {
+                if (validation.count < 2) {
+                    // Si la fecha coincide y no se ha alcanzado el límite
+                    validation.count += 1;
+                    localStorage.setItem("validationDownload", JSON.stringify(validation));
+                    proceedWithDownload(newData, newFileName);
+                } else {
+                    toast.error("Ya has alcanzado el límite de descargas para hoy. Intenta nuevamente mañana.", { autoClose: 2000 });
+                }
+            } else {
+                // Si es un nuevo día, reinicia el contador y permite la descarga
+                localStorage.setItem("validationDownload", JSON.stringify({ date: confirmationDate, count: 1 }));
+                proceedWithDownload(newData, newFileName);
+            }
+        }
+    };
+    
+    // Función para realizar la descarga
+    const proceedWithDownload = (newData, newFileName) => {
         connections.genTokenZoho().then(response => {
-            toast.info("Descarga en curso, por favor espere...", { position: "top-center", autoClose: 2000, hideProgressBar: true });
+            toast.info("Descarga en curso, por favor espere...", { autoClose: 2000 });
             if (response.data.success) {
                 const tokenZoho = response.data.data.auth_token;
                 connections.exportTickets(tokenZoho, newData).then(resp => {
@@ -123,7 +155,7 @@ const Home = () => {
                             setDataToSearch({ site: "", interval: 9 });
                             setInputValue("");
                             setFilteredClients(clients);
-                            toast.success("¡Descarga completada!", { position: "top-center", autoClose: 2000, hideProgressBar: true });
+                            toast.success("¡Descarga completada!", { autoClose: 2000 });
                         }, 1000);
                     }
                 }).catch(err => handleError(err));
@@ -140,9 +172,9 @@ const Home = () => {
             setDateToFilter("");
             setFilteredClients(clients);
             if (err?.status === 404) {
-                toast.warning("No hay datos disponibles", { position: "top-center", autoClose: 2000, hideProgressBar: true });
+                toast.warning("No hay datos disponibles", { autoClose: 2000 });
             } else {
-                toast.error("¡Error! Reintente o comuníquese con soporte", { position: "top-center", autoClose: 2000, hideProgressBar: true });
+                toast.error("¡Error! Reintente o comuníquese con soporte", { autoClose: 2000 });
             }
         }, 1000);
         console.error(err);
@@ -256,17 +288,20 @@ const Home = () => {
                                 <button
                                     type="button"
                                     className="btn btn-primary btn-download-csv"
-                                    onClick={handleDownloadClick}
+                                    onClick={() => setShowModal(true)}
                                     disabled={(dataToSearch.interval === 3 && dateToFilter === "")}
                                 >
                                     DESCARGAR CSV
                                 </button>
                             </div>
                         </form>
+                        {
+                            showModal && <ModalCode modal={showModal} onHide={() => setShowModal(false)} submitData={handleDownloadClick} />
+                        }
                         <ToastContainer />
                     </div>
                     :
-                    <FormUpdate />
+                    <FormUpdate showModal={showModal} setShowModal={setShowModal} />
             }
         </div>
     );
