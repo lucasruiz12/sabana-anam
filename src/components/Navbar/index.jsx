@@ -10,9 +10,9 @@ const Navbar = ({ currentTab, setCurrentTab }) => {
                         <li className="nav-item" style={{ cursor: "pointer" }} onClick={() => setCurrentTab(1)}>
                             <p className={`nav-link${currentTab === 1 ? " active" : ""}`} aria-current="page">Descarga de sábana</p>
                         </li>
-                        <li className="nav-item" style={{ cursor: "pointer" }} onClick={() => setCurrentTab(2)}>
+                        {/* <li className="nav-item" style={{ cursor: "pointer" }} onClick={() => setCurrentTab(2)}>
                             <p className={`nav-link${currentTab === 2 ? " active" : ""}`}>Actualización de tickets</p>
-                        </li>
+                        </li> */}
                     </ul>
                 </div>
             </div>

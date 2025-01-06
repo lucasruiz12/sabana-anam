@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { toast, ToastContainer } from 'react-toastify';
+import Spinner from 'react-bootstrap/Spinner';
 import clients from '../../constants/clients';
 import connections from '../../connections';
 import DatePicker from 'react-datepicker';
@@ -21,6 +22,7 @@ const Home = () => {
     const [showDropdown, setShowDropdown] = useState(false);
     const [currentTab, setCurrentTab] = useState(1);
     const [showModal, setShowModal] = useState(false);
+    const [downloadInProgress, setDownloadInProgress] = useState(false);
 
     const generateCSVToDownload = (data) => {
         const BOM = '\uFEFF';
@@ -96,10 +98,10 @@ const Home = () => {
     const handleDownloadClick = () => {
         const { site, interval } = dataToSearch;
         let now = new Date();
-        
+
         if (dateToFilter) {
             now = new Date(dateToFilter);
-        }
+        };
         const date = interval === 9 ? "" : now.toISOString();
         const daily = interval === 1;
         const weekly = interval === 2;
@@ -108,42 +110,46 @@ const Home = () => {
         const clientName = "Covivi";
         const newData = { date, daily, weekly, specifies, monthly, clientName, site };
         let newFileName = `SABANA_${daily ? "DAILY" : weekly ? "WEEKLY" : daily ? "FILTER_BY_DAY" : specifies ? "FILTER_ONE_DAY" : monthly ? "MONTHLY" : "ALL_DATA"}-${date}_${clientName}`;
-    
+
         if (site !== "") {
             newFileName += site.split("-")[0].trim();
-        }
+        };
         newFileName += ".csv";
-    
+
         // Validación de descarga
-        const validation = JSON.parse(localStorage.getItem("validationDownload"));
-        const confirmationDate = now.toLocaleDateString();
-    
-        if (!validation) {
-            // Si no existe validación, se crea y se permite la descarga
-            localStorage.setItem("validationDownload", JSON.stringify({ date: confirmationDate, count: 1 }));
-            proceedWithDownload(newData, newFileName);
-        } else {
-            if (validation.date === confirmationDate) {
-                if (validation.count < 2) {
-                    // Si la fecha coincide y no se ha alcanzado el límite
-                    validation.count += 1;
-                    localStorage.setItem("validationDownload", JSON.stringify(validation));
-                    proceedWithDownload(newData, newFileName);
-                } else {
-                    toast.error("Ya has alcanzado el límite de descargas para hoy. Intenta nuevamente mañana.", { autoClose: 2000 });
-                }
-            } else {
-                // Si es un nuevo día, reinicia el contador y permite la descarga
-                localStorage.setItem("validationDownload", JSON.stringify({ date: confirmationDate, count: 1 }));
-                proceedWithDownload(newData, newFileName);
-            }
-        }
+        // const validation = JSON.parse(localStorage.getItem("validationDownload"));
+        // const confirmationDate = now.toLocaleDateString();
+
+        // if (!validation) {
+        //     // Si no existe validación, se crea y se permite la descarga
+        //     localStorage.setItem("validationDownload", JSON.stringify({ date: confirmationDate, count: 1 }));
+        //     proceedWithDownload(newData, newFileName);
+        // } else {
+        //     if (validation.date === confirmationDate) {
+        //         if (validation.count < 2) {
+        //             // Si la fecha coincide y no se ha alcanzado el límite
+        //             validation.count += 1;
+        //             localStorage.setItem("validationDownload", JSON.stringify(validation));
+        //             proceedWithDownload(newData, newFileName);
+        //         } else {
+        //             toast.error("Ya has alcanzado el límite de descargas para hoy. Intenta nuevamente mañana.", { autoClose: 2000 });
+        //         }
+        //     } else {
+        //         // Si es un nuevo día, reinicia el contador y permite la descarga
+        //         localStorage.setItem("validationDownload", JSON.stringify({ date: confirmationDate, count: 1 }));
+        //         proceedWithDownload(newData, newFileName);
+        //     };
+        // };
+
+        proceedWithDownload(newData, newFileName);
+
     };
-    
+
     // Función para realizar la descarga
     const proceedWithDownload = (newData, newFileName) => {
         connections.genTokenZoho().then(response => {
             toast.info("Descarga en curso, por favor espere...", { autoClose: 2000 });
+            setDownloadInProgress(true);
             if (response.data.success) {
                 const tokenZoho = response.data.data.auth_token;
                 connections.exportTickets(tokenZoho, newData).then(resp => {
@@ -156,6 +162,7 @@ const Home = () => {
                             setInputValue("");
                             setFilteredClients(clients);
                             toast.success("¡Descarga completada!", { autoClose: 2000 });
+                            setDownloadInProgress(false);
                         }, 1000);
                     }
                 }).catch(err => handleError(err));
@@ -173,8 +180,10 @@ const Home = () => {
             setFilteredClients(clients);
             if (err?.status === 404) {
                 toast.warning("No hay datos disponibles", { autoClose: 2000 });
+                setDownloadInProgress(false);
             } else {
                 toast.error("¡Error! Reintente o comuníquese con soporte", { autoClose: 2000 });
+                setDownloadInProgress(false);
             }
         }, 1000);
         console.error(err);
@@ -192,7 +201,7 @@ const Home = () => {
                 currentTab === 1 ?
                     <div className="container p-4 form-container">
                         <form className="form-search">
-                            <h2 className="mb-4">Sábana de Tickets</h2>
+                            <h2 className="mb-4" style={{ display: "flex", justifyContent: "center" }}>Sábana de Tickets</h2>
                             <div className="mb-3">
                                 <label htmlFor="site" className="form-label">Puntos tácticos</label>
                                 <input
@@ -223,7 +232,7 @@ const Home = () => {
                                 )}
                             </div>
 
-                            <div className="mb-3">
+                            {/* <div className="mb-3">
                                 <label className="form-label">Intervalo</label>
                                 <div className="form-check">
                                     <input
@@ -283,15 +292,27 @@ const Home = () => {
                                         />
                                     )}
                                 </div>
-                            </div>
+                            </div> */}
                             <div style={{ display: "flex", justifyContent: "center" }}>
                                 <button
                                     type="button"
                                     className="btn btn-primary btn-download-csv"
-                                    onClick={() => setShowModal(true)}
-                                    disabled={(dataToSearch.interval === 3 && dateToFilter === "")}
+                                    // onClick={() => setShowModal(true)}
+                                    onClick={() => handleDownloadClick()}
+                                    disabled={((dataToSearch.interval === 3 && dateToFilter === "") || downloadInProgress)}
                                 >
-                                    DESCARGAR CSV
+                                    {
+                                        downloadInProgress ?
+                                            <Spinner
+                                                as="span"
+                                                animation="border"
+                                                size="sm"
+                                                role="status"
+                                                aria-hidden="true"
+                                            />
+                                            :
+                                            "DESCARGAR CSV"
+                                    }
                                 </button>
                             </div>
                         </form>
