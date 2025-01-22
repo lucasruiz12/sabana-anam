@@ -27,13 +27,21 @@ const Home = () => {
     const generateCSVToDownload = (data) => {
         const BOM = '\uFEFF';
         const headers = Object.keys(data[0]);
+    
         const rows = data.map(row =>
-            headers.map(header =>
-                `"${(row[header] || "").toString().replace(/"/g, '""')}"`
-            ).join(',').trim()
+            headers.map(header => {
+                let cellValue = row[header];
+    
+                if (typeof cellValue === 'object' && cellValue !== null) {
+                    cellValue = JSON.stringify(cellValue);
+                };
+    
+                return `"${(cellValue || "").toString().replace(/"/g, '""')}"`;
+            }).join(',').trim()
         );
+    
         const csvContent = [headers.join(','), ...rows].join('\n');
-
+    
         return BOM + csvContent;
     };
 
